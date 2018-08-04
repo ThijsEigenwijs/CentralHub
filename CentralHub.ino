@@ -279,6 +279,7 @@ void argProcessor() {
 		}
 	}
 	else if (strcmp(argv[0], "show") == 0) {
+		hue.setGroupWhite(0, hue.ON, 255, rgb.brightness, rgb.ct);
 		setColor(rgb);
 	}
 	else if (strcmp(argv[0], "white") == 0) {
@@ -343,13 +344,5 @@ void wp_configPage() {
 	content += rgb.brightness;
 	content += "<br>CT: ";
 	content += rgb.ct;
-	content += "<br><br>API: ";
-	content += cf.api;
-	content += "<br>Hue IP: ";
-	content += cf.ip;
-	content += "<br><br>Local IP: ";
-	content += WiFi.localIP();
-	content += "<br>AP IP: ";
-	content += WiFi.softAPIP();
 	wp.send(200, "text/html", content);
 }
