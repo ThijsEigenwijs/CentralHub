@@ -1,3 +1,6 @@
+# contains credentials
+credentials.h
+
 # Prerequisites
 *.d
 
