@@ -153,6 +153,7 @@ void setup()
 
 	Serial.println("WP - Setting up the web envoirment");
 	wp.on("/", wp_handleRoot);
+	wp.on("/config", wp_configPage);
 	wp.begin();
 
 	Serial.println("SSH - Setting up the node connection");
@@ -207,7 +208,7 @@ void ssh_handleClient() {
 					//Create the command buffer
 					cmd_buf[cmd_ind] = (char)serverClients[i].read();
 					if (cmd_buf[cmd_ind] == '\n') {
-						cmd_buf[cmd_ind-1] = '\0';
+						cmd_buf[cmd_ind - 1] = '\0';
 						argCreator();
 					}
 					else {
@@ -236,12 +237,12 @@ void argCreator() {
 
 		}
 	}
-	
-	
+
+
 	argProcessor();
 	cmd_ind = 0;
 
-	
+
 
 }
 
@@ -257,9 +258,38 @@ void argProcessor() {
 		Serial.print(" - ");
 		Serial.println(argv[i]);
 	}
-	
+
 	if (strcmp(argv[0], "uit") == 0) {
 		Serial.println("Commando Uit!");
+		hue.setGroup(0, hue.OFF, 255, 255, 255, 255, 255);
+	}
+	else if (strcmp(argv[0], "aan") == 0) {
+		Serial.println("Commando Aan!");
+		hue.setGroup(0, hue.ON, 255, 255, 255, 255, 255);
+	}
+	else if (strcmp(argv[0], "set") == 0) {
+		if (argc == 4) {
+			setRGB(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), rgb.brightness);
+		}
+		else if (argc == 5) {
+			setRGB(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));
+		}
+		else {
+			printSSH("set {r} {g} {b} \n set {r} {g} {b} {brightness}");
+		}
+	}
+	else if (strcmp(argv[0], "show") == 0) {
+		setColor(rgb);
+	}
+	else if (strcmp(argv[0], "white") == 0) {
+		if (argc == 2) {
+			hue.setGroupWhite(0, hue.ON, 255, rgb.brightness, atoi(argv[1]) );
+			rgb.ct = atoi(argv[1]);
+		}
+	}
+	else if (strcmp(argv[0], "brightness") == 0) {
+		if (argc == 2)
+			rgb.brightness = atoi(argv[1]);
 	}
 }
 
@@ -299,4 +329,27 @@ void printSSH(char* s) {
 	for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
 		serverClients[i].write(s, sizeof(s) + 1);
 	}
+}
+
+void wp_configPage() {
+	String content = "";
+	content += "Values<br>R: ";
+	content += rgb.r;
+	content += "<br>G: ";
+	content += rgb.g;
+	content += "<br>B: ";
+	content += rgb.g;
+	content += "<br>Brightness: ";
+	content += rgb.brightness;
+	content += "<br>CT: ";
+	content += rgb.ct;
+	content += "<br><br>API: ";
+	content += cf.api;
+	content += "<br>Hue IP: ";
+	content += cf.ip;
+	content += "<br><br>Local IP: ";
+	content += WiFi.localIP();
+	content += "<br>AP IP: ";
+	content += WiFi.softAPIP();
+	wp.send(200, "text/html", content);
 }

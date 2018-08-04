@@ -9,4 +9,5 @@ struct _rgb {
 	int g;
 	int b;
 	int brightness;
+	int ct;
 };
