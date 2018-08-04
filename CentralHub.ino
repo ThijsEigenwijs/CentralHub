@@ -1,7 +1,11 @@
 #include "ESP8266WiFi.h"
 #include "WiFiClient.h"
 #include "ESP8266WebServer.h"
+#include <ArduinoJson.h>
+#include "FS.h"
+
 #include "credentials.h"	//This file isn't included in the git
+#include "structs.h"
 
 #ifndef credentials
 const char *ssid = "your ssid";
@@ -11,6 +15,16 @@ const char *ap_ssid = "CH";
 const char *ap_pass = "defaultPass";
 #endif
 
+//Configurations
+//Config file
+File configFile;
+_configFile cf;
+
+//Config Lights
+File lights;
+
+//Config Rooms
+File rooms;
 
 //Webserver stuff
 ESP8266WebServer wp(80);	//Webportal
@@ -25,7 +39,37 @@ void setup()
 
 
 	Serial.println("CH - Loading configurations...");
-	// Get the last configs out of EEPROM
+	// Get the last configs
+
+	configFile = SPIFFS.open("/config.json", "r");
+	if (!configFile) {
+		Serial.println("CH - No configuration file found");
+	}
+	else {
+		size_t size = configFile.size();
+		if (size > 1024) {
+			Serial.println("CH - Configuration file is too big");
+		}
+		else {
+			std::unique_ptr<char[]> buf(new char[size]);
+			configFile.readBytes(buf.get(), size);
+			StaticJsonBuffer<200> jsonBuffer;
+			JsonObject& json = jsonBuffer.parseObject(buf.get());
+
+			if (!json.success()) {
+				Serial.println("CH - Couldn't parse the config file");
+			}
+			else {
+				cf.empty = false;
+				cf.api = json["api"];
+				cf.ip = json["ip"];
+			}
+
+
+
+		}
+
+	}
 
 	Serial.println("CH - Loading settings");
 	// Set the settings
@@ -39,13 +83,13 @@ void setup()
 	Serial.print(" ");
 
 	WiFi.begin(ssid, pass);
-	
+
 	while (WiFi.status() != WL_CONNECTED) {
 		//This is indeed somekind of bootloop, to prevent it from rebooting we delay it
 		delay(150);
 		Serial.print(".");
 	}
-	
+
 	Serial.print("Wifi - Status: ");
 	// Indicate if there is a connection
 	Serial.print("Connected");

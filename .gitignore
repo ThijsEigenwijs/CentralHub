@@ -1,6 +1,13 @@
 # contains credentials
 credentials.h
 
+#build files and other stuff i want to ignore
+*.buildinfo
+*.d
+*.o
+*.elf
+*.ino.elf
+
 # Prerequisites
 *.d
 
