@@ -158,4 +158,6 @@ C:\Users\thijs\AppData\Local\Temp\VMBuilds\CentralHub\esp8266_nodemcuv2\Debug\Ce
  C:\Users\thijs\Documents\Arduino\libraries\ArduinoJson\src/ArduinoJson/Polyfills/parseInteger.hpp \
  C:\Users\thijs\Documents\Arduino\libraries\ArduinoJson\src/ArduinoJson/Serialization/JsonSerializerImpl.hpp \
  C:\Users\thijs\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/FS.h \
- C:\Users\thijs\AppData\Local\Temp\VMBuilds\CentralHub\esp8266_nodemcuv2\Debug\credentials.h
+ C:\Users\thijs\Documents\Arduino\libraries\ESP_HUE\src/ESPHue.h \
+ C:\Users\thijs\AppData\Local\Temp\VMBuilds\CentralHub\esp8266_nodemcuv2\Debug\credentials.h \
+ C:\Users\thijs\AppData\Local\Temp\VMBuilds\CentralHub\esp8266_nodemcuv2\Debug\structs.h

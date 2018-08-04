@@ -1,5 +1,6 @@
 # contains credentials
 credentials.h
+config.json
 
 #build files and other stuff i want to ignore
 *.buildinfo

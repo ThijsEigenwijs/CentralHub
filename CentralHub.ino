@@ -3,7 +3,7 @@
 #include "ESP8266WebServer.h"
 #include <ArduinoJson.h>
 #include "FS.h"
-
+#include <ESPHue.h>
 #include "credentials.h"	//This file isn't included in the git
 #include "structs.h"
 
@@ -14,6 +14,18 @@ const char *pass = "your pass";
 const char *ap_ssid = "CH";
 const char *ap_pass = "defaultPass";
 #endif
+
+_rgb rgb;
+
+//Command Parser
+#define MAX_COMMAND_LENGTH 80
+#define MAX_NUM_ARGUMENTS 8
+#define UART_BAUDRATE 9600
+int cmd_ind = 0;
+char cmd_buf[MAX_COMMAND_LENGTH + 1] = "         /0";
+char *argv[MAX_NUM_ARGUMENTS];
+unsigned int argc = 0;
+volatile int new_command = 0;
 
 //Configurations
 //Config file
@@ -28,7 +40,15 @@ File rooms;
 
 //Webserver stuff
 ESP8266WebServer wp(80);	//Webportal
-ESP8266WebServer ssh(22);	//Textline interface for nodes
+
+//Node connector
+#define MAX_SRV_CLIENTS 10
+WiFiServer ssh(22);	//Textline interface for nodes
+WiFiClient serverClients[MAX_SRV_CLIENTS];
+
+//Hue settings
+WiFiClient chue;
+ESPHue hue = ESPHue(chue, "uDCpx3W4OhcdipQTiPIFYgXvIizP5yMYUf6Y5E7a", "192.168.0.52", 80);
 
 
 void setup()
@@ -40,7 +60,7 @@ void setup()
 
 	Serial.println("CH - Loading configurations...");
 	// Get the last configs
-
+	SPIFFS.begin();
 	configFile = SPIFFS.open("/config.json", "r");
 	if (!configFile) {
 		Serial.println("CH - No configuration file found");
@@ -51,6 +71,7 @@ void setup()
 			Serial.println("CH - Configuration file is too big");
 		}
 		else {
+
 			std::unique_ptr<char[]> buf(new char[size]);
 			configFile.readBytes(buf.get(), size);
 			StaticJsonBuffer<200> jsonBuffer;
@@ -60,22 +81,20 @@ void setup()
 				Serial.println("CH - Couldn't parse the config file");
 			}
 			else {
+				Serial.println("CH - Loading settings");
 				cf.empty = false;
 				cf.api = json["api"];
 				cf.ip = json["ip"];
+
+				Serial.print("\tAPI key: ");
+				Serial.println(cf.api);
+				Serial.print("\tHue IP: ");
+				Serial.println(cf.ip);
 			}
-
-
-
 		}
-
 	}
 
-	Serial.println("CH - Loading settings");
-	// Set the settings
-
 	Serial.println("Wifi - Initialise");
-	//Initialse the wifi here
 	WiFi.mode(WIFI_AP_STA);
 
 	Serial.print("Wifi - Connecting to: ");
@@ -90,7 +109,7 @@ void setup()
 		Serial.print(".");
 	}
 
-	Serial.print("Wifi - Status: ");
+	Serial.print("\nWifi - Status: ");
 	// Indicate if there is a connection
 	Serial.print("Connected");
 
@@ -110,25 +129,35 @@ void setup()
 	Serial.print("\tIP: ");
 	Serial.println(WiFi.softAPIP());
 
+
 	//Some logic to see if its configured
-	Serial.println("Hue - Connecting to the hue");
+	if (!cf.empty) {
+		Serial.println("Hue - Connecting to the hue");
+		// Connect to the hue
 
-	Serial.println("Hue - Reading information");
-	// Reading out the settings
 
-	Serial.println("Hue - Setting up the rooms");
-	// Getting the rooms offline
 
-	Serial.println("Hue - Settings up the lights");
-	// Getting the lights offline
+		Serial.println("Hue - Reading information");
+		// Reading out the settings
+
+
+		Serial.println("Hue - Setting up the rooms");
+		// Getting the rooms offline
+		//Serial.println(hue.getGroupInfo(0));
+
+		Serial.println("Hue - Settings up the lights");
+		// Getting the lights offline
+		//Serial.println(hue.getLightInfo(1));
+
+	}
 
 	Serial.println("WP - Setting up the web envoirment");
 	wp.on("/", wp_handleRoot);
 	wp.begin();
 
 	Serial.println("SSH - Setting up the node connection");
-	ssh.on("/", ssh_handleCommand);
 	ssh.begin();
+	ssh.setNoDelay(true);
 
 	Serial.println("CH - Done!");
 
@@ -138,14 +167,136 @@ void loop()
 {
 
 	wp.handleClient();
-	ssh.handleClient();
+
+	ssh_handleClient();
 
 }
 
 void wp_handleRoot() {
-	wp.send(200, "text/html", "Nothing yet to see...\nThijs");
+	wp.send(200, "text/html", "Nothing yet to see...<br>Thijs");
 }
 
-void ssh_handleCommand() {
-	ssh.send(400, "text", "invalid command, or wrong syntax");
+
+
+void ssh_handleClient() {
+	if (ssh.hasClient()) {
+		for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
+			//find free/disconnected spot
+			if (!serverClients[i] || !serverClients[i].connected()) {
+				if (serverClients[i]) serverClients[i].stop();
+				serverClients[i] = ssh.available();
+				Serial.print("New client: "); Serial.print(i);
+
+				break;
+			}
+		}
+	}
+
+	for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
+		//		serverClients[i].write("\r\n-----------------------------------\r\n,", 41);
+		//		serverClients[i].write("This connection is not ready for usage\r\n", 41);
+		//		serverClients[i].write("-----------------------------------\r\n\r\n,", 41);
+		//		serverClients[i].stop();
+
+		if (serverClients[i] && serverClients[i].connected()) {
+			if (serverClients[i].available()) {
+				//get data from the telnet client and push it to the UART
+				String data = "";
+				while (serverClients[i].available()) {
+
+					//Create the command buffer
+					cmd_buf[cmd_ind] = (char)serverClients[i].read();
+					if (cmd_buf[cmd_ind] == '\n') {
+						cmd_buf[cmd_ind-1] = '\0';
+						argCreator();
+					}
+					else {
+						cmd_ind++;
+					}
+
+				}
+			}
+		}
+
+	}
+}
+
+void argCreator() {
+
+	char *argtemp = NULL;
+	cmd_buf[cmd_ind] = NULL;
+	argc = 0;
+
+	if ((argtemp = strtok(cmd_buf, " ")) != NULL) // Check if string contains arguments
+	{
+		argv[argc++] = argtemp; // save pointer to argument argc
+		while (argc < MAX_NUM_ARGUMENTS && (argtemp = strtok(NULL, " ")) != NULL)
+		{
+			argv[argc++] = argtemp;
+
+		}
+	}
+	
+	
+	argProcessor();
+	cmd_ind = 0;
+
+	
+
+}
+
+
+void argProcessor() {
+	Serial.print("Argc: ");
+	Serial.print(argc);
+	Serial.println("x");
+
+	for (int i = 0; i < argc; i++)
+	{
+		Serial.print(i);
+		Serial.print(" - ");
+		Serial.println(argv[i]);
+	}
+	
+	if (strcmp(argv[0], "uit") == 0) {
+		Serial.println("Commando Uit!");
+	}
+}
+
+void setColor(int r, int g, int b, int brightness) {
+	hue.setGroup(0, hue.ON, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
+	rgb.r = r;
+	rgb.g = g;
+	rgb.b = b;
+	rgb.brightness = brightness;
+	return;
+}
+
+void setColor(_rgb rgb) {
+	hue.setGroup(0, hue.ON, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
+	return;
+}
+
+void setRGB(int r, int g, int b, int brightness) {
+	rgb.r = r;
+	rgb.g = g;
+	rgb.b = b;
+	rgb.brightness = brightness;
+
+	Serial.print("r: ");
+	Serial.println(rgb.r);
+
+	Serial.print("g: ");
+	Serial.println(rgb.g);
+
+	Serial.print("b: ");
+	Serial.println(rgb.b);
+
+	return;
+}
+
+void printSSH(char* s) {
+	for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
+		serverClients[i].write(s, sizeof(s) + 1);
+	}
 }

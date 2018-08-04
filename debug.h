@@ -17,7 +17,7 @@ public:
 	debug();
 	~debug();
 	void print(String s);
-	void print()
+	void print();
 
 private:
 
