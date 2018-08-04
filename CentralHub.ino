@@ -111,7 +111,7 @@ void setup()
 
 	Serial.print("\nWifi - Status: ");
 	// Indicate if there is a connection
-	Serial.print("Connected");
+	Serial.println("Connected");
 
 	//Print some debug info
 	Serial.print("\tIP: ");
@@ -334,15 +334,16 @@ void printSSH(char* s) {
 
 void wp_configPage() {
 	String content = "";
-	content += "Values<br>R: ";
+	content += "{\"RGB\":{\"Red\":\"";
 	content += rgb.r;
-	content += "<br>G: ";
+	content += "\",\"Green\":\"";
 	content += rgb.g;
-	content += "<br>B: ";
-	content += rgb.g;
-	content += "<br>Brightness: ";
+	content += "\",\"Blue\":\"";
+	content += rgb.b;
+	content += "\"},\"Brightness\":\"";
 	content += rgb.brightness;
-	content += "<br>CT: ";
+	content += "\",\"White\":\"";
 	content += rgb.ct;
-	wp.send(200, "text/html", content);
+  content += "\"}";
+	wp.send(200, "application/json", content);
 }

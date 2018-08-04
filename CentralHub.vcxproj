@@ -78,6 +78,7 @@
     <None Include="CentralHub.ino">
       <FileType>CppCode</FileType>
     </None>
+    <None Include="data\config.json" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="credentials.h" />
@@ -86,9 +87,6 @@
     </ClInclude>
     <ClInclude Include="structs.h" />
     <ClInclude Include="__vm\.CentralHub.vsarduino.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="config.json" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="debug.cpp" />

@@ -19,6 +19,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="CentralHub.ino" />
+    <None Include="data\config.json">
+      <Filter>data</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.CentralHub.vsarduino.h">
@@ -33,11 +36,6 @@
     <ClInclude Include="debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="config.json">
-      <Filter>data</Filter>
-    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="debug.cpp">
