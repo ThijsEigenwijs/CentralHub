@@ -80,4 +80,5 @@ C:\Users\thijs\AppData\Local\Temp\VMBuilds\CentralHub\esp8266_nodemcuv2\Debug\Ce
  C:\Users\thijs\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WiFi\src/include/ssl.h \
  C:\Users\thijs\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WiFi\src/WiFiClient.h \
  C:\Users\thijs\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WebServer\src/ESP8266WebServer.h \
- C:\Users\thijs\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WebServer\src/detail/RequestHandler.h
+ C:\Users\thijs\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WebServer\src/detail/RequestHandler.h \
+ C:\Users\thijs\AppData\Local\Temp\VMBuilds\CentralHub\esp8266_nodemcuv2\Debug\credentials.h

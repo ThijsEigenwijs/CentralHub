@@ -13,7 +13,8 @@ const char *ap_pass = "defaultPass";
 
 
 //Webserver stuff
-ESP8266WebServer server(80);
+ESP8266WebServer wp(80);	//Webportal
+ESP8266WebServer ssh(22);	//Textline interface for nodes
 
 
 void setup()
@@ -78,9 +79,12 @@ void setup()
 	// Getting the lights offline
 
 	Serial.println("WP - Setting up the web envoirment");
-	server.on("/", handleRoot);
-	Serial.println("WP - Done");
-	Serial.println("WP - {Homepage}");
+	wp.on("/", wp_handleRoot);
+	wp.begin();
+
+	Serial.println("SSH - Setting up the node connection");
+	ssh.on("/", ssh_handleCommand);
+	ssh.begin();
 
 	Serial.println("CH - Done!");
 
@@ -89,10 +93,15 @@ void setup()
 void loop()
 {
 
-	/* add main program code here */
+	wp.handleClient();
+	ssh.handleClient();
 
 }
 
-void handleRoot() {
-	server.send(200, "text/html", "<h1>You are connected</h1>");
+void wp_handleRoot() {
+	wp.send(200, "text/html", "Nothing yet to see...\nThijs");
+}
+
+void ssh_handleCommand() {
+	ssh.send(400, "text", "invalid command, or wrong syntax");
 }
