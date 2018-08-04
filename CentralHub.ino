@@ -248,49 +248,64 @@ void argCreator() {
 
 
 void argProcessor() {
-	Serial.print("Argc: ");
-	Serial.print(argc);
-	Serial.println("x");
+	//Serial.print("Argc: ");
+	//Serial.print(argc);
+	//Serial.println("x");
 
-	for (int i = 0; i < argc; i++)
-	{
-		Serial.print(i);
-		Serial.print(" - ");
-		Serial.println(argv[i]);
-	}
+	//for (int i = 0; i < argc; i++)
+	//{
+	//	Serial.print(i);
+	//	Serial.print(" - ");
+	//	Serial.println(argv[i]);
+	//}
 
-	if (strcmp(argv[0], "uit") == 0) {
-		Serial.println("Commando Uit!");
-		hue.setGroup(0, hue.OFF, 255, 255, 255, 255, 255);
+	if (strcmp(argv[0], "off") == 0) {
+		//Serial.println("Commando Uit!");
+		printlnSSH("Turning Off",12);
+		hue.setGroup(0, hue.OFF, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
 	}
-	else if (strcmp(argv[0], "aan") == 0) {
-		Serial.println("Commando Aan!");
-		hue.setGroup(0, hue.ON, 255, 255, 255, 255, 255);
+	else if (strcmp(argv[0], "on") == 0) {
+		//Serial.println("Commando Aan!");
+		printlnSSH("Turning On", 11);
+		hue.setGroup(0, hue.ON, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
 	}
 	else if (strcmp(argv[0], "set") == 0) {
 		if (argc == 4) {
+			printlnSSH("Set the colors", 15);
 			setRGB(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), rgb.brightness);
 		}
 		else if (argc == 5) {
+			printlnSSH("Set the colors", 15);
 			setRGB(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));
 		}
 		else {
-			printSSH("set {r} {g} {b} \n set {r} {g} {b} {brightness}");
+			printlnSSH("Wrong usage of set\n correct usage:\n  set {r} {g} {b}\n  set {r} {g} {b} {brightness}", 84);
 		}
 	}
 	else if (strcmp(argv[0], "show") == 0) {
-		hue.setGroupWhite(0, hue.ON, 255, rgb.brightness, rgb.ct);
-		setColor(rgb);
+		if (argc == 2)
+			if (strcmp(argv[1], "white") == 0) {
+				printlnSSH("Showing White!", 15);
+				hue.setGroupWhite(0, hue.ON, 255, rgb.brightness, rgb.ct);
+			}
+			else {
+				printlnSSH("Showing Color!",15);
+				setColor(rgb);
+			}
+		else
+			printlnSSH("Wrong arguments",16);
 	}
 	else if (strcmp(argv[0], "white") == 0) {
 		if (argc == 2) {
-			hue.setGroupWhite(0, hue.ON, 255, rgb.brightness, atoi(argv[1]) );
+			printlnSSH("Set White", 10);
 			rgb.ct = atoi(argv[1]);
 		}
 	}
 	else if (strcmp(argv[0], "brightness") == 0) {
-		if (argc == 2)
+		if (argc == 2) {
+			printlnSSH("Set brightness", 15);
 			rgb.brightness = atoi(argv[1]);
+		}
 	}
 }
 
@@ -326,9 +341,17 @@ void setRGB(int r, int g, int b, int brightness) {
 	return;
 }
 
-void printSSH(char* s) {
+void printlnSSH(char* s, int length) {
 	for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
-		serverClients[i].write(s, sizeof(s) + 1);
+		serverClients[i].write(s, length);
+		serverClients[i].write("\n", 2);
+	}
+}
+
+void printSSH(char* s, int length) {
+	for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
+		serverClients[i].write(s, length);
+		serverClients[i].write("\n", 2);
 	}
 }
 
@@ -344,6 +367,6 @@ void wp_configPage() {
 	content += rgb.brightness;
 	content += "\",\"White\":\"";
 	content += rgb.ct;
-  content += "\"}";
+	content += "\"}";
 	wp.send(200, "application/json", content);
 }
