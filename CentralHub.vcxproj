@@ -81,11 +81,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="credentials.h" />
+    <ClInclude Include="debug.h">
+      <FileType>CppCode</FileType>
+    </ClInclude>
     <ClInclude Include="structs.h" />
     <ClInclude Include="__vm\.CentralHub.vsarduino.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="config.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="debug.cpp" />
   </ItemGroup>
   <PropertyGroup>
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>
