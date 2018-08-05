@@ -7,6 +7,8 @@
 #include "credentials.h"	//This file isn't included in the git
 #include "structs.h"
 
+int lastConnection = -1;
+
 #ifndef credentials
 const char *ssid = "your ssid";
 const char *pass = "your pass";
@@ -195,19 +197,17 @@ void ssh_handleClient() {
 	}
 
 	for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
-		//		serverClients[i].write("\r\n-----------------------------------\r\n,", 41);
-		//		serverClients[i].write("This connection is not ready for usage\r\n", 41);
-		//		serverClients[i].write("-----------------------------------\r\n\r\n,", 41);
-		//		serverClients[i].stop();
 
 		if (serverClients[i] && serverClients[i].connected()) {
 			if (serverClients[i].available()) {
+				lastConnection = i;
 				//get data from the telnet client and push it to the UART
 				String data = "";
 				while (serverClients[i].available()) {
 
 					//Create the command buffer
 					cmd_buf[cmd_ind] = (char)serverClients[i].read();
+					Serial.print(cmd_buf[cmd_ind]);
 					if (cmd_buf[cmd_ind] == '\n') {
 						cmd_buf[cmd_ind - 1] = '\0';
 						argCreator();
@@ -274,11 +274,11 @@ void argProcessor() {
 
 	else if (strcmp(argv[0], "on") == 0) {
 		if(argc == 2)
-		setLight(1, atoi(argv[1]));
+		setLightPower(1, atoi(argv[1]));
 	}
 	else if (strcmp(argv[0], "off") == 0) {
 		if(argc == 2)
-			setLight(0, atoi(argv[1]));
+			setLightPower(0, atoi(argv[1]));
 	}
 
 	else if (strcmp(argv[0], "set") == 0) {
@@ -288,10 +288,10 @@ void argProcessor() {
 		}
 		else if (argc == 5) {
 			printlnSSH("Set the colors", 15);
-			setRGB(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));
+			setColorLight(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));
 		}
 		else {
-			printlnSSH("Wrong usage of set\n correct usage:\n  set {r} {g} {b}\n  set {r} {g} {b} {brightness}", 84);
+			printlnSSH("Wrong usage of set\n correct usage:\n  set {r} {g} {b}\n  set {r} {g} {b} {light}", 84);
 		}
 	}
 	else if (strcmp(argv[0], "show") == 0) {
@@ -323,6 +323,10 @@ void argProcessor() {
 			printlnSSH("Set White", 10);
 			rgb.ct = atoi(argv[1]);
 		}
+		else if (argc == 3) {
+			printlnSSH("Set White Light", 16);
+			hue.setLightWhite(atoi(argv[2]), hue.ON, 255, rgb.brightness, atoi(argv[1]));
+		}
 	}
 	else if (strcmp(argv[0], "brightness") == 0) {
 		if (argc == 2) {
@@ -339,6 +343,11 @@ void setColor(_rgb rgb) {
 
 void setColor(_rgb rgb, int light) {
 	hue.setLight(light, hue.ON, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
+	return;
+}
+
+void setColorLight(int r, int g, int b, int light) {
+	hue.setLight(light, hue.ON, 255, rgb.brightness, r, g, b);
 	return;
 }
 
@@ -361,17 +370,14 @@ void setRGB(int r, int g, int b, int brightness) {
 }
 
 void printlnSSH(char* s, int length) {
-	for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
-		serverClients[i].write(s, length);
-		serverClients[i].write("\n", 2);
-	}
+		serverClients[lastConnection].write(s, length);
+		serverClients[lastConnection].write("\n", 2);
 }
 
 void printSSH(char* s, int length) {
-	for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
-		serverClients[i].write(s, length);
-		serverClients[i].write("\n", 1);
-	}
+		serverClients[lastConnection].write(s, length);
+		serverClients[lastConnection].write("\n", 1);
+	
 }
 
 void wp_configPage() {
@@ -390,6 +396,6 @@ void wp_configPage() {
 	wp.send(200, "application/json", content);
 }
 
-void setLight(bool state, int light) {
+void setLightPower(bool state, int light) {
 	hue.setLightPower(light, state);
 }
