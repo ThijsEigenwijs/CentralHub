@@ -94,6 +94,17 @@ void setup()
 		}
 	}
 
+	Serial.print("AP - Creating Network");
+	// Create the access point so we can connect the sensors and other stuff
+	WiFi.softAP(ap_ssid, ap_ssid);
+
+	Serial.print("AP - Created: ");
+	Serial.println(ap_ssid);
+	// Display the name
+	Serial.print("\tIP: ");
+	Serial.println(WiFi.softAPIP());
+
+
 	Serial.println("Wifi - Initialise");
 	WiFi.mode(WIFI_AP_STA);
 
@@ -118,16 +129,6 @@ void setup()
 	Serial.println(WiFi.localIP());
 	Serial.print("\tGateway: ");
 	Serial.println(WiFi.gatewayIP());
-
-	Serial.print("AP - Creating Network");
-	// Create the access point so we can connect the sensors and other stuff
-	WiFi.softAP(ap_ssid, ap_ssid);
-
-	Serial.print("AP - Created: ");
-	Serial.println(ap_ssid);
-	// Display the name
-	Serial.print("\tIP: ");
-	Serial.println(WiFi.softAPIP());
 
 
 	//Some logic to see if its configured
@@ -259,16 +260,27 @@ void argProcessor() {
 	//	Serial.println(argv[i]);
 	//}
 
-	if (strcmp(argv[0], "off") == 0) {
+	if (strcmp(argv[0], "allOff") == 0) {
 		//Serial.println("Commando Uit!");
-		printlnSSH("Turning Off",12);
-		hue.setGroup(0, hue.OFF, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
+		printlnSSH("Turning Off", 12);
+		//hue.setGroup(0, hue.OFF, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
+		hue.setGroupPower(0, hue.OFF);
 	}
-	else if (strcmp(argv[0], "on") == 0) {
+	else if (strcmp(argv[0], "allOn") == 0) {
 		//Serial.println("Commando Aan!");
 		printlnSSH("Turning On", 11);
-		hue.setGroup(0, hue.ON, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
+		hue.setGroupPower(0, hue.ON);
 	}
+
+	else if (strcmp(argv[0], "on") == 0) {
+		if(argc == 2)
+		setLight(1, atoi(argv[1]));
+	}
+	else if (strcmp(argv[0], "off") == 0) {
+		if(argc == 2)
+			setLight(0, atoi(argv[1]));
+	}
+
 	else if (strcmp(argv[0], "set") == 0) {
 		if (argc == 4) {
 			printlnSSH("Set the colors", 15);
@@ -289,11 +301,22 @@ void argProcessor() {
 				hue.setGroupWhite(0, hue.ON, 255, rgb.brightness, rgb.ct);
 			}
 			else {
-				printlnSSH("Showing Color!",15);
+				printlnSSH("Showing Color!", 15);
 				setColor(rgb);
 			}
+		else if (argc == 3) {
+			printlnSSH("Only 1 light",13);
+			if (strcmp(argv[1], "white") == 0) {
+				printlnSSH("Showing White!", 15);
+				hue.setLightWhite(atoi(argv[2]), hue.ON, 255, rgb.brightness, rgb.ct);
+			}
+			else {
+				printlnSSH("Showing Color!", 15);
+				setColor(rgb, atoi(argv[2]));
+			}
+		}
 		else
-			printlnSSH("Wrong arguments",16);
+			printlnSSH("Wrong arguments", 16);
 	}
 	else if (strcmp(argv[0], "white") == 0) {
 		if (argc == 2) {
@@ -309,17 +332,13 @@ void argProcessor() {
 	}
 }
 
-void setColor(int r, int g, int b, int brightness) {
+void setColor(_rgb rgb) {
 	hue.setGroup(0, hue.ON, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
-	rgb.r = r;
-	rgb.g = g;
-	rgb.b = b;
-	rgb.brightness = brightness;
 	return;
 }
 
-void setColor(_rgb rgb) {
-	hue.setGroup(0, hue.ON, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
+void setColor(_rgb rgb, int light) {
+	hue.setLight(light, hue.ON, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
 	return;
 }
 
@@ -328,7 +347,7 @@ void setRGB(int r, int g, int b, int brightness) {
 	rgb.g = g;
 	rgb.b = b;
 	rgb.brightness = brightness;
-
+	Serial.println("=======\nNew Colors\n======");
 	Serial.print("r: ");
 	Serial.println(rgb.r);
 
@@ -351,7 +370,7 @@ void printlnSSH(char* s, int length) {
 void printSSH(char* s, int length) {
 	for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
 		serverClients[i].write(s, length);
-		serverClients[i].write("\n", 2);
+		serverClients[i].write("\n", 1);
 	}
 }
 
@@ -369,4 +388,8 @@ void wp_configPage() {
 	content += rgb.ct;
 	content += "\"}";
 	wp.send(200, "application/json", content);
+}
+
+void setLight(bool state, int light) {
+	hue.setLightPower(light, state);
 }
