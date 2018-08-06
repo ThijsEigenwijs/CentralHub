@@ -191,7 +191,7 @@ void ssh_handleClient() {
 				serverClients[i] = ssh.available();
 				Serial.print("New client: "); Serial.print(i); Serial.println();
 				lastConnection = i;
-				printlnSSH("Welcome at the Central Hub Command Line!",41);
+				printlnSSH("Welcome at the Central Hub Command Line!");
 				break;
 			}
 		}
@@ -263,13 +263,13 @@ void argProcessor() {
 
 	if (strcmp(argv[0], "allOff") == 0) {
 		//Serial.println("Commando Uit!");
-		printlnSSH("Turning Off", 12);
+		printlnSSH("Turning Off");
 		//hue.setGroup(0, hue.OFF, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
 		hue.setGroupPower(0, hue.OFF);
 	}
 	else if (strcmp(argv[0], "allOn") == 0) {
 		//Serial.println("Commando Aan!");
-		printlnSSH("Turning On", 11);
+		printlnSSH("Turning On");
 		hue.setGroupPower(0, hue.ON);
 	}
 	else if (strcmp(argv[0], "on") == 0) {
@@ -289,76 +289,86 @@ void argProcessor() {
 		}
 	}
 	else if (strcmp(argv[0], "set") == 0) {
-		if (argc == 4) {
-			printlnSSH("Set the colors", 15);
+		if (argc == 1) {
+			showRgbValues();
+		}
+		else if (argc == 4) {
+			printlnSSH("Set the colors");
 			setRGB(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), rgb.brightness);
 		}
 		else if (argc == 5) {
-			printlnSSH("Set the colors", 15);
+			printlnSSH("Set the colors");
 			setColorLight(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));
-		}
-		else {
-			printlnSSH("Wrong usage of set\n correct usage:\n  set {r} {g} {b}\n  set {r} {g} {b} {light}", 84);
 		}
 	}
 	else if (strcmp(argv[0], "show") == 0) {
 		if (argc == 2)
 			if (strcmp(argv[1], "white") == 0) {
-				printlnSSH("Showing White!", 15);
+				printlnSSH("Showing White!");
 				hue.setGroupWhite(0, hue.ON, 255, rgb.brightness, rgb.ct);
 			}
 			else {
-				printlnSSH("Showing Color!", 15);
+				printlnSSH("Showing Color!");
 				setColor(rgb);
 			}
 		else if (argc == 3) {
-			printlnSSH("Only 1 light",13);
+			printlnSSH("Only 1 light");
 			if (strcmp(argv[1], "white") == 0) {
-				printlnSSH("Showing White!", 15);
+				printlnSSH("Showing White!");
 				hue.setLightWhite(atoi(argv[2]), hue.ON, 255, rgb.brightness, rgb.ct);
 			}
 			else {
-				printlnSSH("Showing Color!", 15);
+				printlnSSH("Showing Color!");
 				setColor(rgb, atoi(argv[2]));
 			}
 		}
-		else
-			printlnSSH("Wrong arguments", 16);
+		else if (argc == 1) {
+			showRgbValues();
+		}
+			
 	}
 	else if (strcmp(argv[0], "white") == 0) {
 		if (argc == 2) {
-			printlnSSH("Set White", 10);
+			printlnSSH("Set White");
 			rgb.ct = atoi(argv[1]);
 		}
 		else if (argc == 3) {
-			printlnSSH("Set White Light", 16);
+			printlnSSH("Set White Light");
 			hue.setLightWhite(atoi(argv[2]), hue.ON, 255, rgb.brightness, atoi(argv[1]));
+		}
+		else if (argc == 1) {
+			printSSH("CT Value: ");
+			printlnSSH(rgb.ct);
 		}
 	}
 	else if (strcmp(argv[0], "brightness") == 0) {
 		if (argc == 2) {
-			printlnSSH("Set brightness", 15);
+			printlnSSH("Set brightness");
 			rgb.brightness = atoi(argv[1]);
+		}
+		else if (argc == 1) {
+			printSSH("Brightness: ");
+			printlnSSH(rgb.brightness);
 		}
 	}
 	else if (strcmp(argv[0], "help") == 0) {
-		printlnSSH("Help page for the Central Hub\n", 31);
-		printlnSSH("Turn 1 or more lights on:", 26);
-		printlnSSH("on {lamp id} ...\n", 18);
-		printlnSSH("Turn 1 or more lights off:", 27);
-		printlnSSH("off {lamp id} ...\n", 19);
-		printlnSSH("Turn all on or off", 19);
-		printlnSSH("allOn / allOff\n", 16);
-		printlnSSH("Set the colors", 15);
-		printlnSSH("set {r} {g} {b}\nset {r} {g} {b} {light}\n", 41);
-		printlnSSH("show color", 11);
-		printlnSSH("show color {light}", 19);
-		printlnSSH("show white {light}\n", 20);
-		printlnSSH("Set the white light", 20);
-		printlnSSH("white {ct}\nwhite {ct} {light}\n", 31);
-		printlnSSH("Set brightness", 15);
-		printlnSSH("brightness {bright}", 20);
-		printlnSSH("Help - This page", 17);
+		printlnSSH("Help page for the Central Hub\n");
+		printlnSSH("Turn 1 or more lights on:");
+		printlnSSH("on {lamp id} ...\n");
+		printlnSSH("Turn 1 or more lights off:");
+		printlnSSH("off {lamp id} ...\n");
+		printlnSSH("Turn all on or off");
+		printlnSSH("allOn / allOff\n");
+		printlnSSH("Set the colors");
+		printlnSSH("set {r} {g} {b}\nset {r} {g} {b} {light}\n");
+		printlnSSH("show color");
+		printlnSSH("show color {light}");
+		printlnSSH("show white {light}\n");
+		printlnSSH("Set the white light");
+		printlnSSH("white {ct}\nwhite {ct} {light}\n");
+		printlnSSH("Set brightness");
+		printlnSSH("brightness {bright}");
+		printlnSSH("Help - This page");
 
 
 	}
@@ -397,14 +407,22 @@ void setRGB(int r, int g, int b, int brightness) {
 	return;
 }
 
-void printlnSSH(char* s, int length) {
-		serverClients[lastConnection].write(s, length);
-		serverClients[lastConnection].write("\n", 2);
+void printlnSSH(char* s) {
+		serverClients[lastConnection].print(s);
+		serverClients[lastConnection].print("\n");
 }
 
-void printSSH(char* s, int length) {
-		serverClients[lastConnection].write(s, length);
-		serverClients[lastConnection].write("\n", 1);
+void printlnSSH(int i) {
+	serverClients[lastConnection].print(i);
+	serverClients[lastConnection].print("\n");
+}
+
+void printSSH(int i) {
+	serverClients[lastConnection].print(i);
+}
+
+void printSSH(char* s) {
+		serverClients[lastConnection].print(s);
 	
 }
 
@@ -426,4 +444,18 @@ void wp_configPage() {
 
 void setLightPower(bool state, int light) {
 	hue.setLightPower(light, state);
+}
+
+void showRgbValues() {
+	printSSH("Colors:\nRed: ");
+	printlnSSH(rgb.r);
+	printSSH("Green: ");
+	printlnSSH(rgb.g);
+	printSSH("Blue: ");
+	printlnSSH(rgb.b);
+	printSSH("\nBrightness: ");
+	printlnSSH(rgb.brightness);
+	printSSH("CT Value: ");
+	printlnSSH(rgb.ct);
+	return;
 }
