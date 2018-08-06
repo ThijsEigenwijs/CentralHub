@@ -189,8 +189,9 @@ void ssh_handleClient() {
 			if (!serverClients[i] || !serverClients[i].connected()) {
 				if (serverClients[i]) serverClients[i].stop();
 				serverClients[i] = ssh.available();
-				Serial.print("New client: "); Serial.print(i);
-
+				Serial.print("New client: "); Serial.print(i); Serial.println();
+				lastConnection = i;
+				printlnSSH("Welcome at the Central Hub Command Line!",41);
 				break;
 			}
 		}
@@ -273,12 +274,20 @@ void argProcessor() {
 	}
 
 	else if (strcmp(argv[0], "on") == 0) {
-		if(argc == 2)
-		setLightPower(1, atoi(argv[1]));
+		if (argc != 1) {
+			for (int i = 1; i < argc; i++)
+			{
+				setLightPower(1, atoi(argv[i]));
+			}
+		}
 	}
 	else if (strcmp(argv[0], "off") == 0) {
-		if(argc == 2)
-			setLightPower(0, atoi(argv[1]));
+		if (argc != 1) {
+			for (int i = 1; i < argc; i++)
+			{
+				setLightPower(0, atoi(argv[i]));
+			}
+		}
 	}
 
 	else if (strcmp(argv[0], "set") == 0) {
@@ -333,6 +342,14 @@ void argProcessor() {
 			printlnSSH("Set brightness", 15);
 			rgb.brightness = atoi(argv[1]);
 		}
+	}
+	else if (strcmp(argv[0], "help") == 0) {
+		printlnSSH("Help page for the Central Hub", 30);
+		printlnSSH("Turn 1 or more lights on:", 26);
+		printlnSSH("on {lamp id} ...\n", 18);
+		printlnSSH("Turn 1 or more lights off:", 27);
+		printlnSSH("off {lamp id} ...\n", 19);
+
 	}
 }
 
