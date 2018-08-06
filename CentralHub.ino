@@ -272,7 +272,6 @@ void argProcessor() {
 		printlnSSH("Turning On", 11);
 		hue.setGroupPower(0, hue.ON);
 	}
-
 	else if (strcmp(argv[0], "on") == 0) {
 		if (argc != 1) {
 			for (int i = 1; i < argc; i++)
@@ -289,7 +288,6 @@ void argProcessor() {
 			}
 		}
 	}
-
 	else if (strcmp(argv[0], "set") == 0) {
 		if (argc == 4) {
 			printlnSSH("Set the colors", 15);
@@ -344,11 +342,24 @@ void argProcessor() {
 		}
 	}
 	else if (strcmp(argv[0], "help") == 0) {
-		printlnSSH("Help page for the Central Hub", 30);
+		printlnSSH("Help page for the Central Hub\n", 31);
 		printlnSSH("Turn 1 or more lights on:", 26);
 		printlnSSH("on {lamp id} ...\n", 18);
 		printlnSSH("Turn 1 or more lights off:", 27);
 		printlnSSH("off {lamp id} ...\n", 19);
+		printlnSSH("Turn all on or off", 19);
+		printlnSSH("allOn / allOff\n", 16);
+		printlnSSH("Set the colors", 15);
+		printlnSSH("set {r} {g} {b}\nset {r} {g} {b} {light}\n", 41);
+		printlnSSH("show color", 11);
+		printlnSSH("show color {light}", 19);
+		printlnSSH("show white {light}\n", 20);
+		printlnSSH("Set the white light", 20);
+		printlnSSH("white {ct}\nwhite {ct} {light}\n", 31);
+		printlnSSH("Set brightness", 15);
+		printlnSSH("brightness {bright}", 20);
+		printlnSSH("Help - This page", 17);
+
 
 	}
 }
