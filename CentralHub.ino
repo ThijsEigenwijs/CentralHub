@@ -15,6 +15,8 @@ const char *pass = "your pass";
 
 const char *ap_ssid = "CH";
 const char *ap_pass = "defaultPass";
+
+const char *secretPasscode = "dontknow";
 #endif
 
 _rgb rgb;
@@ -47,6 +49,8 @@ ESP8266WebServer wp(80);	//Webportal
 #define MAX_SRV_CLIENTS 10
 WiFiServer ssh(22);	//Textline interface for nodes
 WiFiClient serverClients[MAX_SRV_CLIENTS];
+String clientName[MAX_SRV_CLIENTS];
+bool clientSetName[MAX_SRV_CLIENTS];
 
 //Hue settings
 WiFiClient chue;
@@ -57,6 +61,12 @@ void setup()
 {
 	pinMode(D2, OUTPUT);
 	digitalWrite(D2, HIGH);
+
+	for (int i = 0; i < MAX_SRV_CLIENTS; i++)
+	{
+		clientSetName[i] = false;
+	}
+
 	Serial.begin(115200);
 	Serial.println("CH - Booting up.... Please wait");
 
@@ -248,129 +258,169 @@ void argCreator() {
 
 }
 
-
 void argProcessor() {
-	//Serial.print("Argc: ");
-	//Serial.print(argc);
-	//Serial.println("x");
+	//This only works if you have set your name!
+	if (clientSetName[lastConnection]) {
 
-	//for (int i = 0; i < argc; i++)
-	//{
-	//	Serial.print(i);
-	//	Serial.print(" - ");
-	//	Serial.println(argv[i]);
-	//}
+		if (strcmp(argv[0], "allOff") == 0) {
+			//Serial.println("Commando Uit!");
+			printlnSSH("Turning Off");
+			//hue.setGroup(0, hue.OFF, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
+			hue.setGroupPower(0, hue.OFF);
+		}
+		else if (strcmp(argv[0], "allOn") == 0) {
+			//Serial.println("Commando Aan!");
+			printlnSSH("Turning On");
+			hue.setGroupPower(0, hue.ON);
+		}
+		else if (strcmp(argv[0], "on") == 0) {
+			if (argc != 1) {
+				for (int i = 1; i < argc; i++)
+				{
+					setLightPower(1, atoi(argv[i]));
+				}
+			}
+		}
+		else if (strcmp(argv[0], "off") == 0) {
+			if (argc != 1) {
+				for (int i = 1; i < argc; i++)
+				{
+					setLightPower(0, atoi(argv[i]));
+				}
+			}
+		}
+		else if (strcmp(argv[0], "set") == 0) {
+			if (argc == 1) {
+				showRgbValues();
+			}
+			else if (argc == 4) {
+				printlnSSH("Set the colors");
+				setRGB(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), rgb.brightness);
+			}
+			else if (argc == 5) {
+				printlnSSH("Set the colors");
+				setColorLight(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));
+			}
+		}
+		else if (strcmp(argv[0], "show") == 0) {
+			if (argc == 2)
+				if (strcmp(argv[1], "white") == 0) {
+					printlnSSH("Showing White!");
+					hue.setGroupWhite(0, hue.ON, 255, rgb.brightness, rgb.ct);
+				}
+				else {
+					printlnSSH("Showing Color!");
+					setColor(rgb);
+				}
+			else if (argc == 3) {
+				printlnSSH("Only 1 light");
+				if (strcmp(argv[1], "white") == 0) {
+					printlnSSH("Showing White!");
+					hue.setLightWhite(atoi(argv[2]), hue.ON, 255, rgb.brightness, rgb.ct);
+				}
+				else {
+					printlnSSH("Showing Color!");
+					setColor(rgb, atoi(argv[2]));
+				}
+			}
+			else if (argc == 1) {
+				showRgbValues();
+			}
 
-	if (strcmp(argv[0], "allOff") == 0) {
-		//Serial.println("Commando Uit!");
-		printlnSSH("Turning Off");
-		//hue.setGroup(0, hue.OFF, 255, rgb.brightness, rgb.r, rgb.g, rgb.b);
-		hue.setGroupPower(0, hue.OFF);
-	}
-	else if (strcmp(argv[0], "allOn") == 0) {
-		//Serial.println("Commando Aan!");
-		printlnSSH("Turning On");
-		hue.setGroupPower(0, hue.ON);
-	}
-	else if (strcmp(argv[0], "on") == 0) {
-		if (argc != 1) {
-			for (int i = 1; i < argc; i++)
-			{
-				setLightPower(1, atoi(argv[i]));
+		}
+		else if (strcmp(argv[0], "white") == 0) {
+			if (argc == 2) {
+				printlnSSH("Set White");
+				rgb.ct = atoi(argv[1]);
+			}
+			else if (argc == 3) {
+				printlnSSH("Set White Light");
+				hue.setLightWhite(atoi(argv[2]), hue.ON, 255, rgb.brightness, atoi(argv[1]));
+			}
+			else if (argc == 1) {
+				printSSH("CT Value: ");
+				printlnSSH(rgb.ct);
 			}
 		}
-	}
-	else if (strcmp(argv[0], "off") == 0) {
-		if (argc != 1) {
-			for (int i = 1; i < argc; i++)
-			{
-				setLightPower(0, atoi(argv[i]));
+		else if (strcmp(argv[0], "brightness") == 0) {
+			if (argc == 2) {
+				printlnSSH("Set brightness");
+				rgb.brightness = atoi(argv[1]);
+			}
+			else if (argc == 1) {
+				printSSH("Brightness: ");
+				printlnSSH(rgb.brightness);
 			}
 		}
-	}
-	else if (strcmp(argv[0], "set") == 0) {
-		if (argc == 1) {
-			showRgbValues();
-		}
-		else if (argc == 4) {
+		else if (strcmp(argv[0], "help") == 0) {
+			printlnSSH("Help page for the Central Hub\n");
+			printlnSSH("Turn 1 or more lights on:");
+			printlnSSH("on {lamp id} ...\n");
+			printlnSSH("Turn 1 or more lights off:");
+			printlnSSH("off {lamp id} ...\n");
+			printlnSSH("Turn all on or off");
+			printlnSSH("allOn / allOff\n");
 			printlnSSH("Set the colors");
-			setRGB(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), rgb.brightness);
-		}
-		else if (argc == 5) {
-			printlnSSH("Set the colors");
-			setColorLight(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));
-		}
-	}
-	else if (strcmp(argv[0], "show") == 0) {
-		if (argc == 2)
-			if (strcmp(argv[1], "white") == 0) {
-				printlnSSH("Showing White!");
-				hue.setGroupWhite(0, hue.ON, 255, rgb.brightness, rgb.ct);
-			}
-			else {
-				printlnSSH("Showing Color!");
-				setColor(rgb);
-			}
-		else if (argc == 3) {
-			printlnSSH("Only 1 light");
-			if (strcmp(argv[1], "white") == 0) {
-				printlnSSH("Showing White!");
-				hue.setLightWhite(atoi(argv[2]), hue.ON, 255, rgb.brightness, rgb.ct);
-			}
-			else {
-				printlnSSH("Showing Color!");
-				setColor(rgb, atoi(argv[2]));
-			}
-		}
-		else if (argc == 1) {
-			showRgbValues();
-		}
-			
-	}
-	else if (strcmp(argv[0], "white") == 0) {
-		if (argc == 2) {
-			printlnSSH("Set White");
-			rgb.ct = atoi(argv[1]);
-		}
-		else if (argc == 3) {
-			printlnSSH("Set White Light");
-			hue.setLightWhite(atoi(argv[2]), hue.ON, 255, rgb.brightness, atoi(argv[1]));
-		}
-		else if (argc == 1) {
-			printSSH("CT Value: ");
-			printlnSSH(rgb.ct);
-		}
-	}
-	else if (strcmp(argv[0], "brightness") == 0) {
-		if (argc == 2) {
+			printlnSSH("set {r} {g} {b}\nset {r} {g} {b} {light}\n");
+			printlnSSH("show color");
+			printlnSSH("show color {light}");
+			printlnSSH("show white {light}\n");
+			printlnSSH("Set the white light");
+			printlnSSH("white {ct}\nwhite {ct} {light}\n");
 			printlnSSH("Set brightness");
-			rgb.brightness = atoi(argv[1]);
+			printlnSSH("brightness {bright}");
+			printlnSSH("Help - This page");
 		}
-		else if (argc == 1) {
-			printSSH("Brightness: ");
-			printlnSSH(rgb.brightness);
+		else if (strcmp(argv[0], "name") == 0) {
+			if (argc == 2) {
+				clientName[lastConnection] = argv[1];
+				clientSetName[lastConnection] = true;
+			}
+			else {
+				printSSH("Your name: ");
+				printlnSSH(clientName[lastConnection]);
+			}
+		}
+		else if (strcmp(argv[0], "getId") == 0) {
+			printSSH("Your ID: ");
+			printlnSSH(lastConnection);
+		}
+		else if (strcmp(argv[0], "quit") == 0) {
+			printlnSSH("Goodbye!");
+			clientSetName[lastConnection] = false;
+			clientName[lastConnection] = "";
+
+			serverClients[lastConnection].stop();
+		}
+		else if (strcmp(argv[0], "disconnectAll") == 0) {
+			if (argc == 3) {
+				if (strcmp(argv[1], secretPasscode)) {
+					for (int i = 0; i < MAX_SRV_CLIENTS; i++)
+					{
+						clientSetName[i] = false;
+						clientName[i] = "";
+					}
+					printlnSSH("Goodbye!");
+					serverClients[lastConnection].stopAll();
+				}
+			}
 		}
 	}
-	else if (strcmp(argv[0], "help") == 0) {
-		printlnSSH("Help page for the Central Hub\n");
-		printlnSSH("Turn 1 or more lights on:");
-		printlnSSH("on {lamp id} ...\n");
-		printlnSSH("Turn 1 or more lights off:");
-		printlnSSH("off {lamp id} ...\n");
-		printlnSSH("Turn all on or off");
-		printlnSSH("allOn / allOff\n");
-		printlnSSH("Set the colors");
-		printlnSSH("set {r} {g} {b}\nset {r} {g} {b} {light}\n");
-		printlnSSH("show color");
-		printlnSSH("show color {light}");
-		printlnSSH("show white {light}\n");
-		printlnSSH("Set the white light");
-		printlnSSH("white {ct}\nwhite {ct} {light}\n");
-		printlnSSH("Set brightness");
-		printlnSSH("brightness {bright}");
-		printlnSSH("Help - This page");
-
-
+	else {
+		if (strcmp(argv[0], "name") == 0) {
+			if (argc == 2) {
+				clientName[lastConnection] = argv[1];
+				clientSetName[lastConnection] = true;
+			}
+			else {
+				printlnSSH("You haven't set your name, please use:");
+				printlnSSH("name {your name}");
+			}
+		}
+		else {
+			printlnSSH("You haven't set your name, please use:");
+			printlnSSH("name {your name}");
+		}
 	}
 }
 
@@ -408,8 +458,8 @@ void setRGB(int r, int g, int b, int brightness) {
 }
 
 void printlnSSH(char* s) {
-		serverClients[lastConnection].print(s);
-		serverClients[lastConnection].print("\n");
+	serverClients[lastConnection].print(s);
+	serverClients[lastConnection].print("\n");
 }
 
 void printlnSSH(int i) {
@@ -417,13 +467,21 @@ void printlnSSH(int i) {
 	serverClients[lastConnection].print("\n");
 }
 
+void printlnSSH(String s) {
+	serverClients[lastConnection].print(s);
+	serverClients[lastConnection].print("\n");
+}
+
 void printSSH(int i) {
 	serverClients[lastConnection].print(i);
 }
 
+void printSSH(String s) {
+	serverClients[lastConnection].print(s);
+}
+
 void printSSH(char* s) {
-		serverClients[lastConnection].print(s);
-	
+	serverClients[lastConnection].print(s);
 }
 
 void wp_configPage() {
@@ -434,13 +492,23 @@ void wp_configPage() {
 	content += rgb.g;
 	content += "\",\"Blue\":\"";
 	content += rgb.b;
-	content += "\"},\"Brightness\":\"";
+	content += "\",\"Brightness\":\"";
 	content += rgb.brightness;
 	content += "\",\"White\":\"";
 	content += rgb.ct;
-	content += "\",\"Connectivity\":{\"Live Connections\":\"";
+	content += "\"},\"Connectivity\":{\"Live Connections\":\"";
 	content += liveConnections();
-	content += "\"}}";
+	content += "\",\"\Max connections\":\"";
+	content += MAX_SRV_CLIENTS;
+	content += "\",\"WiFi SSID\":\"";
+	content += ssid;
+	content += "\",\"IP Address\":\"";
+	content += WiFi.localIP().toString();
+	content += "\",\"Connections\":{";
+	content += nameConnections();
+	content += "\"End of the list\":\"";
+	content += true;
+	content += "\"}}}";
 	wp.send(200, "application/json", content);
 }
 
@@ -469,4 +537,22 @@ int liveConnections() {
 			connections--;
 	}
 	return connections;
+}
+
+String nameConnections() {
+	String content = "";
+	for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
+		if (serverClients[i] || serverClients[i].connected()) {
+			content += "\""; content += i; content += "\":\"";
+			if (clientName[i] == "") {
+				content += "-";
+
+			}
+			else {
+				content += clientName[i];
+			}
+			content += "\",";
+		}
+	}
+	return content;
 }
