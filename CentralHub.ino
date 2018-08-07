@@ -55,7 +55,8 @@ ESPHue hue = ESPHue(chue, "uDCpx3W4OhcdipQTiPIFYgXvIizP5yMYUf6Y5E7a", "192.168.0
 
 void setup()
 {
-
+	pinMode(D2, OUTPUT);
+	digitalWrite(D2, HIGH);
 	Serial.begin(115200);
 	Serial.println("CH - Booting up.... Please wait");
 
@@ -125,6 +126,7 @@ void setup()
 	Serial.print("\nWifi - Status: ");
 	// Indicate if there is a connection
 	Serial.println("Connected");
+	digitalWrite(D2, LOW);
 
 	//Print some debug info
 	Serial.print("\tIP: ");
@@ -179,8 +181,6 @@ void loop()
 void wp_handleRoot() {
 	wp.send(200, "text/html", "Nothing yet to see...<br>Thijs");
 }
-
-
 
 void ssh_handleClient() {
 	if (ssh.hasClient()) {
@@ -438,7 +438,9 @@ void wp_configPage() {
 	content += rgb.brightness;
 	content += "\",\"White\":\"";
 	content += rgb.ct;
-	content += "\"}";
+	content += "\",\"Connectivity\":{\"Live Connections\":\"";
+	content += liveConnections();
+	content += "\"}}";
 	wp.send(200, "application/json", content);
 }
 
@@ -458,4 +460,13 @@ void showRgbValues() {
 	printSSH("CT Value: ");
 	printlnSSH(rgb.ct);
 	return;
+}
+
+int liveConnections() {
+	int connections = MAX_SRV_CLIENTS;
+	for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
+		if (!serverClients[i] || !serverClients[i].connected())
+			connections--;
+	}
+	return connections;
 }
